@@ -1,5 +1,6 @@
 from typing import Optional
 from datetime import datetime
+from uuid import uuid4
 import re
 
 from pydantic import (
@@ -9,6 +10,7 @@ from pydantic import (
     Field,
     field_validator,
     field_serializer,
+    UUID4,
 )
 
 PATTERN_PASSWORD = (
@@ -43,7 +45,7 @@ class UserCreateSchemas(UserBaseSchemas):
 
 class OutUserSchemas(UserBaseSchemas):
     registered_at: datetime
-    id: int
+    id: UUID4 = Field(default_factory=uuid4)
 
     model_config = ConfigDict(from_attributes=True)
 

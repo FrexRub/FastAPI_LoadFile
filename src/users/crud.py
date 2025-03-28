@@ -1,5 +1,6 @@
 import logging
 from typing import Optional, Union
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.engine import Result
@@ -60,12 +61,12 @@ async def get_user_from_db(session: AsyncSession, email: str) -> User:
     return user
 
 
-async def get_user_by_id(session: AsyncSession, id_user: int) -> Optional[User]:
+async def get_user_by_id(session: AsyncSession, id_user: UUID) -> Optional[User]:
     """
     :param session: сессия
     :type session: AsyncSession
     :param id_user: id пользователя
-    :type id_user: int
+    :type id_user: UUID
     :rtype: Optional[User]
     :return: возвращает пользователя по его id
     """

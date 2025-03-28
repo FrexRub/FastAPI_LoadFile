@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi_pagination import Page, paginate
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
@@ -34,14 +33,14 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get(
     "/list",
-    response_model=Page[OutUserSchemas],
+    response_model=list[OutUserSchemas],
     status_code=status.HTTP_200_OK,
 )
 async def get_list_users(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_superuser_user),
 ):
-    return paginate(await get_users(session=session))
+    return await get_users(session=session)
 
 
 @router.get(
