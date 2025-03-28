@@ -1,4 +1,5 @@
 from typing import Annotated, Optional
+from uuid import uuid4, UUID
 
 import jwt
 from fastapi import Depends, status, Path
@@ -32,7 +33,8 @@ async def current_user_authorization(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
         )
 
-    id_user: int = int(payload["sub"])
+    # id_user: int = int(payload["sub"])
+    id_user: UUID = UUID(payload["sub"])
     user: User = await get_user_by_id(session=session, id_user=id_user)
 
     return user
