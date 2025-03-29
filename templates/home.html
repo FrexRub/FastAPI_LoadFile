@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Home Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
+    <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h4>FastAPI with Yandex Oauth</h4>
+        <div class="img-box">
+          <img class="img" src="{{ url_for('static', path='icons/avatar.png') }}" />
+        </div>
+      </div>
+      <a href="/auth/login/yandex" class="yandex-btn">
+        <div class="yandex-icon"></div>
+        <span class="btn-text">Signin with Yandex.ID</span>
+      </a>
+    </div>
+  </body>
+</html>
