@@ -2,15 +2,18 @@ import warnings
 from typing import Annotated
 import logging
 
-from fastapi import FastAPI, Depends, status
+from fastapi import FastAPI, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import uvicorn
 
-from src.core.config import COOKIE_NAME, configure_logging
+from src.core.config import COOKIE_NAME, configure_logging, templates
 from src.core.database import get_async_session
 from src.core.jwt_utils import create_jwt, validate_password
 from src.users.crud import (
@@ -22,7 +25,8 @@ from src.core.exceptions import (
 from src.users.models import User
 from src.users.routers import router as router_users
 from src.files.routers import router as router_files
-from src.core.exceptions import ErrorInData
+from src.auth.routers import router as router_auth
+from src.core.config import setting_conn, STATIC_DIR
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -55,9 +59,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(SessionMiddleware, secret_key=setting_conn.SECRET_KEY)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.include_router(router_users)
 app.include_router(router_files)
+app.include_router(router_auth)
 
 
 configure_logging(logging.INFO)
@@ -97,9 +104,13 @@ async def login_for_access_token(
         )
 
 
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-def index():
-    return HTMLResponse("<h2> Load files </h2>")
+@app.get("/")
+def index(request: Request):
+    user = request.session.get("user")
+    if user:
+        return RedirectResponse("auth/welcome")
+
+    return templates.TemplateResponse(name="home.html", context={"request": request})
 
 
 if __name__ == "__main__":
