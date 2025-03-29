@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import asyncio
+from typing import Optional
 
 import bcrypt
 import jwt
@@ -84,18 +85,23 @@ async def decode_jwt(
     return decoded
 
 
-async def create_jwt(user: str) -> str:
+async def create_jwt(
+    user: str,
+    expire_minutes: Optional[int] = None,
+) -> str:
     """
     Создание jwt-токен
     :param user: данные пользователя
     :type user: str
+    :param expire_minutes: время экспирации токена
+    :type user: Optional[int]
     :rtype: str
     :return: jwt-токен
     """
     payload = dict()
     payload["sub"] = user
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=setting.auth_jwt.access_token_expire_minutes
-    )
+    if expire_minutes is None:
+        expire_minutes = setting.auth_jwt.access_token_expire_minutes
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
     payload["exp"] = expire
     return await encode_jwt(payload)
