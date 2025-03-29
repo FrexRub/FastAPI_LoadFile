@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, func, UUID
+from sqlalchemy import Boolean, DateTime, func, UUID, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
@@ -27,5 +27,6 @@ class User(Base):
         server_default=func.now(),
         default=datetime.utcnow(),
     )
-    hashed_password: Mapped[str]
+    hashed_password: Mapped[str] = mapped_column(String, nullable=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+    refresh_token: Mapped[str] = mapped_column(String, nullable=True)
