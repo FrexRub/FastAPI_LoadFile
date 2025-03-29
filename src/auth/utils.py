@@ -1,17 +1,11 @@
 import logging
 
 import aiohttp
-from fastapi import APIRouter, Request, Response, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Request
 
-from src.core.config import setting_conn, configure_logging, oauth_yandex
+from src.core.config import configure_logging, oauth_yandex
 from authlib.integrations.starlette_client import OAuthError
-from src.core.exceptions import (
-    ErrorInData,
-    ExceptAuthentication,
-    EmailInUse,
-    UniqueViolationError,
-)
+from src.core.exceptions import ExceptAuthentication
 
 configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)

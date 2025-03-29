@@ -4,34 +4,22 @@ from typing import Optional
 from fastapi import APIRouter, Request, Response, status, Depends
 from fastapi.exceptions import HTTPException
 from starlette.responses import RedirectResponse
-from authlib.integrations.starlette_client import OAuthError
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.users.models import User
-
 from src.core.config import (
-    setting_conn,
+    setting,
     configure_logging,
     templates,
     oauth_yandex,
     COOKIE_NAME,
 )
-
-from src.core.exceptions import (
-    ErrorInData,
-    ExceptAuthentication,
-    EmailInUse,
-    UniqueViolationError,
-)
-from src.core.jwt_utils import create_jwt, validate_password
+from src.core.exceptions import ErrorInData
+from src.core.jwt_utils import create_jwt
 from src.core.database import get_async_session
 from src.auth.utils import get_yandex_user_data, get_access_token
 from src.users.crud import find_user_by_email, create_user_without_password
-from src.users.schemas import (
-    UserCreateSchemas,
-    UserUpdateSchemas,
-    UserUpdatePartialSchemas,
-    UserBaseSchemas,
-)
+from src.users.schemas import UserBaseSchemas
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -68,26 +56,35 @@ async def auth_yandex(
     user: Optional[User] = await find_user_by_email(session=session, email=user_email)
 
     if user is None:
-        logger.info("USER NOT FOUND %s", user_email)
+        logger.info("User with email %s not found", user_email)
         user: User = await create_user_without_password(
             session=session,
             user_data=UserBaseSchemas(full_name=real_name, email=user_email),
         )
+        logger.info("User with email %s created", user_email)
 
     if user_data:
         request.session["user"] = {"family_name": real_name}
 
-    # access_token: str = create_jwt(str(user.id))
-    # access_token: str = await create_jwt(user_email)
+    access_token: str = await create_jwt(
+        user=str(user.id), expire_minutes=setting.auth_jwt.access_token_expire_minutes
+    )
+    refresh_token: str = await create_jwt(
+        user=str(user.id), expire_minutes=setting.auth_jwt.refresh_token_expire_minutes
+    )
 
-    resp = RedirectResponse("welcome")
-    # resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True)
+    user.refresh_token = refresh_token
+    await session.commit()
+
+    resp: Response = RedirectResponse("welcome")
+    resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True)
+
     return resp
 
 
 @router.get("/logout")
 def logout(request: Request):
-    resp = RedirectResponse("/")
+    resp: Response = RedirectResponse("/")
     resp.delete_cookie(COOKIE_NAME)
     request.session.pop("user")
     request.session.clear()
