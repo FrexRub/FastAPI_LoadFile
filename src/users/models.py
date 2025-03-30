@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
 
-# if TYPE_CHECKING:
-#     from src.payments.models import Score, Payment
+if TYPE_CHECKING:
+    from src.files.models import File
 
 
 class User(Base):
@@ -30,3 +30,9 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String, nullable=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
     refresh_token: Mapped[str] = mapped_column(String, nullable=True)
+
+    files: Mapped[list["File"]] = relationship(
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+    )
