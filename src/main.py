@@ -1,4 +1,4 @@
-import warnings
+from uuid import UUID
 from typing import Annotated
 import logging
 
@@ -64,7 +64,6 @@ app.include_router(router_users)
 app.include_router(router_files)
 app.include_router(router_auth)
 
-
 configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -104,7 +103,7 @@ async def login_for_access_token(
 
 
 @app.get("/", include_in_schema=False)
-def index(request: Request):
+async def index(request: Request):
     user = request.session.get("user")
     if user:
         return RedirectResponse("auth/welcome")

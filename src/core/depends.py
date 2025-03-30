@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
-from src.core.config import cookie_scheme
+from src.core.config import COOKIE_NAME
 from src.core.jwt_utils import decode_jwt
 from src.users.crud import get_user_by_id
 from src.users.models import User
@@ -17,84 +17,55 @@ from src.users.models import User
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-async def current_user_authorization(
-    token: str = Depends(oauth2_scheme),
-    cookie_token: str = Depends(cookie_scheme),
-    session: AsyncSession = Depends(get_async_session),
-) -> User:
-
-    if token:
-        try:
-            payload = await decode_jwt(token)
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-            )
-        id_user: UUID = UUID(payload["sub"])
-        user: User = await get_user_by_id(session=session, id_user=id_user)
-
-        return user
-
-    if cookie_token:
-        try:
-            payload = await decode_jwt(token)
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-            )
-        id_user: UUID = UUID(payload["sub"])
-        user: User = await get_user_by_id(session=session, id_user=id_user)
-
-        return user
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-    )
-
-
 async def current_user_authorization_cookie(
     request: Request,
-    cookie_token: str = Depends(cookie_scheme),
     session: AsyncSession = Depends(get_async_session),
 ) -> User:
+    cookie_token = request.cookies.get(COOKIE_NAME)
 
-    if cookie_token:
-        try:
-            payload = await decode_jwt(cookie_token)
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-            )
-        id_user: UUID = UUID(payload["sub"])
-        user: User = await get_user_by_id(session=session, id_user=id_user)
+    if cookie_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
+        )
 
-        return user
+    try:
+        payload = await decode_jwt(cookie_token)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
+        )
 
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-    )
+    id_user = UUID(payload["sub"])
+    return await get_user_by_id(session=session, id_user=id_user)
 
 
 async def current_superuser_user(
     request: Request,
-    cookie_token: str = Depends(cookie_scheme),
     session: AsyncSession = Depends(get_async_session),
 ) -> User:
-    if cookie_token:
-        user: User = await current_user_authorization_cookie(
-            cookie_token=cookie_token, session=session
+    cookie_token = request.cookies.get(COOKIE_NAME)
+
+    if cookie_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
         )
 
-        if not user.is_superuser:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="The user is not an administrator",
-            )
-        return user
+    try:
+        payload = await decode_jwt(cookie_token)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
+        )
 
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-    )
+    id_user = UUID(payload["sub"])
+    user: User = await get_user_by_id(session=session, id_user=id_user)
+
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user is not an administrator",
+        )
+    return user
 
 
 async def user_by_id(

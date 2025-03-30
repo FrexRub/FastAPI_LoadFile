@@ -20,8 +20,6 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 COOKIE_NAME = "bonds_audiofile"
 
-cookie_scheme = APIKeyCookie(name=COOKIE_NAME)
-
 
 def configure_logging(level=logging.INFO):
     logging.basicConfig(
