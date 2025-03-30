@@ -6,6 +6,7 @@ from sqlalchemy.engine import Result
 
 from src.core.database import async_session_maker
 from src.users.models import User
+from src.files.models import File
 from src.users.crud import create_user
 from src.users.schemas import UserCreateSchemas
 from src.core.config import configure_logging

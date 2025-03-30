@@ -34,7 +34,7 @@ class File(Base):
     registered_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        default=datetime.utcnow(),
+        default=datetime.utcnow,
     )
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
 

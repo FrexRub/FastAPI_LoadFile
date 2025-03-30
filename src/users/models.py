@@ -25,7 +25,7 @@ class User(Base):
     registered_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        default=datetime.utcnow(),
+        default=datetime.utcnow,
     )
     hashed_password: Mapped[str] = mapped_column(String, nullable=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
