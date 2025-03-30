@@ -6,7 +6,7 @@ from fastapi import FastAPI, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
@@ -49,11 +49,9 @@ app = FastAPI(
     docs_url="/docs",
 )
 
-origins = ["http://localhost:8000", "http://127.0.0.1:8000"]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,6 +74,7 @@ logger = logging.getLogger(__name__)
     response_class=JSONResponse,
     status_code=status.HTTP_202_ACCEPTED,
     tags=["main"],
+    include_in_schema=False,
 )
 async def login_for_access_token(
     data_login: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -104,7 +103,7 @@ async def login_for_access_token(
         )
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def index(request: Request):
     user = request.session.get("user")
     if user:
@@ -114,4 +113,4 @@ def index(request: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
