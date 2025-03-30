@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from fastapi.templating import Jinja2Templates
 from authlib.integrations.starlette_client import OAuth
+from fastapi.security import APIKeyCookie
+
 
 BASE_DIR = Path(__file__).parent.parent.parent
 UPLOAD_DIR = BASE_DIR / "upload"
@@ -17,6 +19,8 @@ REDIRECT_URI = "http://localhost:8000/auth/yandex"
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 COOKIE_NAME = "bonds_audiofile"
+
+cookie_scheme = APIKeyCookie(name=COOKIE_NAME)
 
 
 def configure_logging(level=logging.INFO):
@@ -70,12 +74,11 @@ oauth_yandex.register(
     name="yandex",
     client_id=setting_conn.CLIENT_ID,
     client_secret=setting_conn.CLIENT_SECRET,
-    issuer="https://login.yandex.ru",
-    authorization_endpoint="https://oauth.yandex.ru/authorize",
-    token_endpoint="https://oauth.yandex.ru/token",
+    authorize_url="https://oauth.yandex.ru/authorize",
+    access_token_url="https://oauth.yandex.ru/token",
     userinfo_endpoint="https://login.yandex.ru/info",
-    jwks_uri="https://login.yandex.ru/oauth/keys",
-    scopes_supported=["login:email", "login:info", "login:avatar"],
-    response_types_supported=["code", "token"],
-    grant_types_supported=["authorization_code", "refresh_token"],
+    client_kwargs={
+        "scope": "login:email login:info",
+        "token_endpoint_auth_method": "client_secret_post",
+    },
 )

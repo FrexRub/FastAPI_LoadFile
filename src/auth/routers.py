@@ -13,11 +13,16 @@ from src.core.config import (
     oauth_yandex,
     COOKIE_NAME,
 )
-from src.core.exceptions import ErrorInData
-from src.core.jwt_utils import create_jwt
+from src.core.exceptions import ErrorInData, NotFindUser
+from src.core.jwt_utils import create_jwt, validate_password
 from src.core.database import get_async_session
 from src.auth.utils import get_yandex_user_data, get_access_token
-from src.users.crud import find_user_by_email, create_user_without_password
+from src.auth.schemas import LoginSchemas
+from src.users.crud import (
+    find_user_by_email,
+    create_user_without_password,
+    get_user_from_db,
+)
 from src.users.schemas import UserBaseSchemas
 
 
@@ -26,6 +31,51 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@router.post("/login", response_class=Response, status_code=status.HTTP_202_ACCEPTED)
+async def user_login_by_password(
+    request: Request,
+    data_login: LoginSchemas,
+    session: AsyncSession = Depends(get_async_session),
+):
+    try:
+        user: User = await get_user_from_db(session=session, email=data_login.email)
+    except NotFindUser:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The user with the username: {data_login.email} not found",
+        )
+
+    if await validate_password(
+        password=data_login.password, hashed_password=user.hashed_password.encode()
+    ):
+        access_token: str = await create_jwt(
+            user=str(user.id),
+            expire_minutes=setting.auth_jwt.access_token_expire_minutes,
+        )
+        refresh_token: str = await create_jwt(
+            user=str(user.id),
+            expire_minutes=setting.auth_jwt.refresh_token_expire_minutes,
+        )
+
+        user.refresh_token = refresh_token
+        await session.commit()
+
+        resp = Response(
+            content="The user is logged in",
+            status_code=status.HTTP_202_ACCEPTED,
+        )
+        resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True)
+
+        request.session["user"] = {"family_name": user.full_name}
+
+        return resp
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error password for login: {data_login.email}",
+        )
 
 
 @router.get("/login/yandex")
@@ -47,7 +97,6 @@ async def auth_yandex(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{exp}",
         )
-
     user_data = await get_yandex_user_data(token["access_token"])
 
     user_email = user_data.get("default_email")
@@ -77,7 +126,7 @@ async def auth_yandex(
     await session.commit()
 
     resp: Response = RedirectResponse("welcome")
-    resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True)
+    resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True, samesite="lax")
 
     return resp
 
@@ -91,7 +140,10 @@ def logout(request: Request):
     return resp
 
 
-@router.get("/welcome")
+@router.get(
+    "/welcome",
+    include_in_schema=False,
+)
 def welcome(request: Request):
     user = request.session.get("user")
     if not user:

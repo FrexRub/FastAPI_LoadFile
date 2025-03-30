@@ -21,6 +21,7 @@ from src.users.schemas import (
     UserCreateSchemas,
     UserUpdateSchemas,
     UserUpdatePartialSchemas,
+    UserBaseSchemas,
 )
 
 
@@ -98,19 +99,32 @@ async def create_user(session: AsyncSession, user_data: UserCreateSchemas) -> Us
         new_user_hashed_password = await create_hash_password(new_user.hashed_password)
         new_user.hashed_password = new_user_hashed_password.decode()
 
-        # new_bank_account: str = await generate_bank_account()
-        # while True:
-        #     stmt = select(Score).filter(Score.account_number == new_bank_account)
-        #     result: Result = await session.execute(stmt)
-        #     bank_account = result.scalars().one_or_none()
-        #
-        #     if bank_account:
-        #         new_bank_account: str = await generate_bank_account()
-        #     else:
-        #         break
-        #
-        # new_score: Score = Score(account_number=new_bank_account)
-        # new_user.scores.append(new_score)
+        session.add(new_user)
+        await session.commit()
+        logger.info("User with email %s created" % user_data.email)
+        return new_user
+
+
+async def create_user_without_password(
+    session: AsyncSession, user_data: UserBaseSchemas
+) -> User:
+    """
+    :param session: сессия
+    :type session: AsyncSession
+    :param user_data: данные нового пользователя
+    :type user_data: UserCreateSchemas
+    :rtype: User
+    :return: возвращает нового пользователя
+    """
+    logger.info(
+        "Start create user (without a password) with email %s" % user_data.email
+    )
+
+    try:
+        new_user: User = User(**user_data.model_dump())
+    except ValueError as exc:
+        raise ErrorInData(exc)
+    else:
         session.add(new_user)
         await session.commit()
         logger.info("User with email %s created" % user_data.email)

@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
 from src.core.database import get_async_session
+from src.core.config import configure_logging
 from src.core.exceptions import (
     ErrorInData,
     EmailInUse,
@@ -17,7 +21,7 @@ from src.users.crud import (
 )
 from src.core.depends import (
     current_superuser_user,
-    current_user_authorization,
+    current_user_authorization_cookie,
     user_by_id,
 )
 from src.users.models import User
@@ -29,6 +33,9 @@ from src.users.schemas import (
 )
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+configure_logging(logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @router.get(
@@ -50,13 +57,16 @@ async def get_list_users(
 )
 async def get_info_about_me(
     session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_user_authorization),
+    user: User = Depends(current_user_authorization_cookie),
 ):
     return await find_user_by_email(session=session, email=user.email)
 
 
 @router.post(
-    "/create", response_model=OutUserSchemas, status_code=status.HTTP_201_CREATED
+    "/create",
+    response_model=OutUserSchemas,
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False,
 )
 async def user_create(
     new_user: UserCreateSchemas,
