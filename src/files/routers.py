@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.files.schemas import FileLoadSchemas
-from src.files.utils import load_media_file
+from src.files.schemas import FileLoadSchemas, FilesListSchemas
+from src.files.utils import load_media_file, list_files
 from src.core.config import configure_logging
 from src.core.exceptions import ErrorInData, UniqueViolationError
 from src.users.models import User
@@ -49,3 +49,15 @@ async def load_file(
             detail=f"{exp}",
         )
     return {"response": "OK"}
+
+
+@router.get(
+    "/list",
+    response_model=list[FilesListSchemas],
+    status_code=status.HTTP_200_OK,
+)
+async def get_list_files(
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(current_user_authorization_cookie),
+):
+    return await list_files(session=session, user_id=user.id)

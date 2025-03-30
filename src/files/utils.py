@@ -1,8 +1,11 @@
 import logging
 from pathlib import Path
+from uuid import UUID
 
 import aiofiles
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.engine import Result
 from sqlalchemy.exc import IntegrityError
 
 from src.files.schemas import FileLoadSchemas
@@ -64,3 +67,13 @@ async def load_media_file(
     else:
         logger.error("invalid format file")
         raise ErrorInData("invalid format file")
+
+
+async def list_files(session: AsyncSession, user_id: UUID) -> list[File]:
+    logger.info("Get list files for user with id: %s" % user_id)
+
+    stmt = select(File).filter(File.user_id == user_id)
+    result: Result = await session.execute(stmt)
+    files = result.scalars().all()
+
+    return list(files)
