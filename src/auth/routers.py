@@ -135,7 +135,7 @@ async def auth_yandex(
 def logout(request: Request):
     resp: Response = RedirectResponse("/")
     resp.delete_cookie(COOKIE_NAME)
-    request.session.pop("user")
+    # request.session.pop("user")
     request.session.clear()
     return resp
 
