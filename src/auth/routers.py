@@ -68,7 +68,7 @@ async def user_login_by_password(
         )
         resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True)
 
-        request.session["user"] = {"family_name": user.full_name}
+        request.session["user"] = {"family_name": user.full_name, "id": str(user.id)}
 
         return resp
     else:
@@ -112,9 +112,6 @@ async def auth_yandex(
         )
         logger.info("User with email %s created", user_email)
 
-    if user_data:
-        request.session["user"] = {"family_name": real_name}
-
     access_token: str = await create_jwt(
         user=str(user.id), expire_minutes=setting.auth_jwt.access_token_expire_minutes
     )
@@ -127,6 +124,7 @@ async def auth_yandex(
 
     resp: Response = RedirectResponse("welcome")
     resp.set_cookie(key=COOKIE_NAME, value=access_token, httponly=True, samesite="lax")
+    request.session["user"] = {"family_name": user.full_name, "id": str(user.id)}
 
     return resp
 

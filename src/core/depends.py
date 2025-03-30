@@ -18,7 +18,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 async def current_user_authorization(
-    request: Request,
     token: str = Depends(oauth2_scheme),
     cookie_token: str = Depends(cookie_scheme),
     session: AsyncSession = Depends(get_async_session),
@@ -82,15 +81,9 @@ async def current_superuser_user(
     session: AsyncSession = Depends(get_async_session),
 ) -> User:
     if cookie_token:
-        try:
-            payload = await decode_jwt(cookie_token)
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authorized"
-            )
-
-        id_user: UUID = UUID(payload["sub"])
-        user: User = await get_user_by_id(session=session, id_user=id_user)
+        user: User = await current_user_authorization_cookie(
+            cookie_token=cookie_token, session=session
+        )
 
         if not user.is_superuser:
             raise HTTPException(
