@@ -27,7 +27,7 @@ async def get_yandex_user_data(access_token):
 async def get_access_token(request: Request):
     try:
         token = await oauth_yandex.yandex.authorize_access_token(request)
-        query_params = request.query_params
+        # query_params = request.query_params
     except OAuthError as exp:
         logger.exception("Error authentication by Yandex.ID", exc_info=exp)
         raise ExceptAuthentication(detail=exp)

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from fastapi.templating import Jinja2Templates
 from authlib.integrations.starlette_client import OAuth
-from fastapi.security import APIKeyCookie
 
 
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -48,7 +47,10 @@ setting_conn = SettingConn()
 
 class DbSetting(BaseSettings):
     url: str = (
-        f"postgresql+asyncpg://{setting_conn.postgres_user}:{setting_conn.postgres_password}@{setting_conn.postgres_host}:{setting_conn.postgres_port}/{setting_conn.postgres_db}"
+        f"postgresql+asyncpg://"
+        f"{setting_conn.postgres_user}:{setting_conn.postgres_password}"
+        f"@{setting_conn.postgres_host}:{setting_conn.postgres_port}"
+        f"/{setting_conn.postgres_db}"
     )
     echo: bool = False
 

@@ -1,4 +1,3 @@
-from uuid import UUID
 from typing import Annotated
 import logging
 
