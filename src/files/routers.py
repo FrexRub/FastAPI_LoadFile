@@ -24,7 +24,7 @@ async def load_file(
     user: User = Depends(current_user_authorization_cookie),
     session: AsyncSession = Depends(get_async_session),
 ):
-    if new_name_file is None:
+    if new_name_file is None or new_name_file == "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The file name is not specified",

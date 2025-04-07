@@ -107,8 +107,6 @@ async def test_user_list(
         "/users/list", headers={"Authorization": f"Bearer {token_admin}"}
     )
 
-    print(response.json())
-
     assert response.status_code == 200
     assert len(response.json()) == 2
 
