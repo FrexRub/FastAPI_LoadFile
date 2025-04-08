@@ -70,7 +70,7 @@ async def load_media_file(
 
 
 async def list_files(session: AsyncSession, user_id: UUID) -> list[File]:
-    logger.info("Get list files for user with id: %s" % user_id)
+    logger.info("Get list files for user with id: %s", user_id)
 
     stmt = select(File).filter(File.user_id == user_id)
     result: Result = await session.execute(stmt)
