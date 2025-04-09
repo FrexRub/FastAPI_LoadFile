@@ -73,3 +73,16 @@ async def test_load_duplicate_file(
 
     assert response.status_code == 400
     assert response.json() == {"detail": "Duplicate name files"}
+
+
+async def test_list_files_user(
+    event_loop: asyncio.AbstractEventLoop,
+    client: AsyncClient,
+    token_admin: str,
+):
+
+    headers = {"Authorization": f"Bearer {token_admin}"}
+    response = await client.get("/files/list", headers=headers)
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
